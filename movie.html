@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TMDB 영화 검색 실습</title>
+    <style>
+        /* 간단한 레이아웃 스타일링 */
+        body { font-family: 'Malgun Gothic', sans-serif; background-color: #141414; color: #fff; margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; text-align: center; }
+        h1 { color: #E50914; }
+        .search-box { margin-bottom: 30px; }
+        .search-box input { padding: 10px; width: 300px; font-size: 16px; border: none; border-radius: 4px; }
+        .search-box button { padding: 10px 20px; font-size: 16px; background-color: #E50914; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 5px; }
+        .search-box button:hover { background-color: #b81d24; }
+        /* 영화 카드 그리드 배치 */
+        .movie-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; padding: 20px 0; }
+        .movie-card { background-color: #1f1f1f; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.5); text-align: left; }
+        .movie-card img { width: 100%; height: 300px; object-fit: cover; background-color: #333; }
+        .movie-info { padding: 15px; }
+        .movie-title { font-size: 16px; font-weight: bold; margin: 0 0 10px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .movie-date { font-size: 13px; color: #aaa; margin-bottom: 5px; }
+        .movie-rate { font-size: 14px; color: #ffc107; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🎬 TMDB MOVIE SEARCH</h1>
+    
+    <!-- 1. 검색창 영역 -->
+    <div class="search-box">
+        <input type="text" id="queryInput" placeholder="영화 제목을 입력하세요 (예: 아바타)" onkeyup="if(window.event.keyCode==13){searchMovies()}">
+        <button onclick="searchMovies()">검색</button>
+    </div>
+
+    <!-- 2. 영화 목록 출력 영역 -->
+    <div id="movieGrid" class="movie-grid">
+        <!-- 자바스크립트로 생성된 카드들이 여기에 들어갑니다 -->
+    </div>
+</div>
+
+<script>
+    // 영화 검색 함수
+    function searchMovies() {
+        const query = document.getElementById('queryInput').value;
+        if (!query) {
+            alert('검색어를 입력해 주세요!');
+            return;
+        }
+
+        const movieGrid = document.getElementById('movieGrid');
+        movieGrid.innerHTML = '<p>영화 데이터를 불러오는 중...</p>';
+
+        // 내 스프링 부트 컨트롤러 API 주소 호출 //자동 변환(인코딩)
+        fetch(`/api/movies/search?query=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                movieGrid.innerHTML = ''; // 기존 화면 초기화
+                console.log(data); //
+                const movies = data.results; // TMDB의 기본 응답 객체 안의 results 배열 추출
+                if (!movies || movies.length === 0) {
+                    movieGrid.innerHTML = '<p>검색 결과가 없습니다.</p>';
+                    return;
+                }
+
+                // 반복문을 돌며 HTML 카드 구조 동적 생성
+                movies.forEach(movie => {
+                    const card = document.createElement('div');
+                    card.className = 'movie-card';
+
+                    // 이미지 주소 규칙 적용 (poster_path가 없으면 대체 기본 이미지 사용)
+                    const posterUrl = movie.poster_path 
+                        ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+                        : 'https://via.placeholder.com/500x750?text=No+Image';
+
+                    card.innerHTML = `
+                        <img src="${posterUrl}" alt="${movie.title}">
+                        <div class="movie-info">
+                        <div class="movie-title" title="${movie.title}">${movie.title}</div>
+                        <div class="movie-date">개봉일: ${movie.release_date || '정보없음'}</div>
+                        <div class="movie-rate">⭐ 평점: ${movie.vote_average.toFixed(1)}</div>
+                        </div>
+                    `;
+                    movieGrid.appendChild(card);
+                });
+            })
+            .catch(error => {
+                console.error('에러 발생:', error);
+                movieGrid.innerHTML = '<p style="color:red;">서버 통신 중 오류가 발생했습니다.</p>';
+            });
+    }
+</script>
+
+</body>
+</html>
