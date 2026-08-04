@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>포켓몬 api 연습</title>
+  </head>
+  <body>
+    <h1>포켓몬 도감</h1>
+    <input type="number" id="pokemon-input" placeholder="번호 입력" />
+    <button id="search-button">검색</button>
+    <div id="result"></div>
+
+    <button id="show-list">전체 보여주기</button>
+    <div
+      id="pokemonGrid"
+      style="
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+      "
+    ></div>
+
+    <script>
+      const pokemonInput = document.getElementById("pokemon-input");
+      const searchButton = document.getElementById("search-button");
+      const result = document.getElementById("result");
+
+      searchButton.addEventListener("click", function () {
+        getPokemon(); //🟢누르면 이 함수를 실행하라
+      });
+
+      async function getPokemon() {
+        //fetch .then
+        const number = pokemonInput.value;
+        console.log(number); //입력한 숫자가 무엇인지?
+        const response = await fetch(
+          "https://pokeapi.co/api/v2/pokemon/" + number,
+        );
+        const data = await response.json();
+        console.log(data); //데이터 모양을 F12 콘솔차에서 확인!!
+        render(data);
+      }
+
+      function render(pokemon) {
+        result.innerHTML = `
+                <h2>포켓몬 이름: ${pokemon.name}</h2>
+                <p>번호: ${pokemon.id}</p>
+                <p>키: ${pokemon.height}</p>
+                <p>몸무게: ${pokemon.weight}</p>
+                <img src="${pokemon.sprites.front_default}">
+            `;
+      }
+
+      // 🟢2️⃣한 번에 보여주기
+      const showList = document.getElementById("show-list");
+      showList.addEventListener("click", function () {
+        getPokemonList();
+      });
+      function getPokemonList() {
+        // 💡 ?limit=20 옵션을 주면 1번부터 20번까지 20마리를 쭉 가져옴. (숫자 변경 가능)
+        const url = "https://pokeapi.co/api/v2/pokemon?limit=20";
+
+        fetch(url)
+          .then((response) => {
+            if (!response.ok) throw new Error("목록을 불러오지 못했습니다.");
+            return response.json();
+          })
+          .then((data) => {
+            // ⭕ 목록 조회일 때는 data.results 안에 20마리의 정보가 배열로 들어있음!
+            console.log("포켓몬 목록 데이터:", data.results);
+
+            // 가져온 리스트 데이터를 화면에 그리는 함수로 넘겨줌.
+            renderList(data.results);
+          })
+          .catch((error) => {
+            console.error("에러 발생:", error);
+          });
+      }
+
+      function renderList(pokemonArray) {
+        const listContainer = document.getElementById("pokemonGrid"); // HTML에 만든 그리드 컨테이너
+        listContainer.innerHTML = ""; // 기존 내용 청소
+
+        pokemonArray.forEach((pokemon) => {
+          const pokemonId = pokemon.url.split("/")[6]; //🟢
+          const imageUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`; //raw.
+
+          const card = document.createElement("div");
+          card.innerHTML = `
+            <img src="${imageUrl}">
+            <h3>${pokemon.name}</h3>
+            <p>번호: No.${pokemonId}</p>
+        `;
+          listContainer.appendChild(card);
+        });
+      }
+    </script>
+  </body>
+</html>
+
+<!-- 🟢plit()은 문자열을 특정 문자를 기준으로 잘라 배열로 만드는 함수 
+https://pokeapi.co/api/v2/pokemon/25/ 
+-->
